@@ -1,0 +1,261 @@
+﻿@model MasterPage.Models.AppEmpMaster
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+
+
+
+
+<h4>Employee Master</h4>
+
+
+
+@* 
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success" data-bs-dismiss="close" id="successMsg">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" id="ErrorMsg">
+        @TempData["Error"]
+    </div>
+} *@
+
+
+
+
+<hr/>
+
+<div class="form-inline row">
+    <div class="form-group col-md-3 mb-1">
+        <label class=" col-form-label-sm  font-weight-bold">Pno : </label>
+        <input type="text" id="searchVCode" class="form-control form-control-sm">
+    </div>
+    <div class="form-group col-md-3 mb-1">
+        <label class="col-form-label-sm  font-weight-bold">Name : </label>
+        <input type="text" id="searchVName" class="form-control form-control-sm">
+    </div>
+    <div class="form-group col-md-3 mb-1">
+        <button id="searchBtn" class="btn btn-sm btn-primary">Search</button>
+        <button id="resetBtn" class="btn btn-sm btn-secondary">Reset</button>
+    </div>
+</div>
+
+
+
+
+
+
+<div class="col-md-12 mb-2 text-end">
+    <button id="ShowForm" class="btn btn-primary">New</button>
+</div>
+
+
+
+
+<table class="table" id="recordsTable">
+    <thead>
+        <tr>
+            <th>
+                Pno
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Email
+            </th>
+            <th>
+                Mobile No
+            </th>
+           
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in ViewBag.List)
+        {
+            <tr>
+                <td>
+                    
+                    <a
+                    class="pno-cell"
+                    data-pno="@item.Pno"
+                    data-name="@item.Name"
+                    data-email="@item.Email"
+                    data-mobile="@item.Mobile">
+                    @item.Pno</a>
+                </td>
+                <td>
+                    @item.Name
+                </td>
+                <td>
+                    @item.Email
+                </td>
+                <td>
+                    @item.Mobile
+                </td>
+                
+
+               
+            </tr>
+        }
+        </table>
+
+
+
+
+    
+
+
+
+<div class="parent" style="display:none">
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Index">
+           
+
+
+                <input type="hidden" id="Id" name="Id" />
+
+                <div class="form-group">
+                <label asp-for="Pno" class="control-label"></label>
+                    <input asp-for="Pno" id="Pno" class="form-control" />
+                <span asp-validation-for="Pno" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" id="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                    <label asp-for="Email"  class="control-label"></label>
+                    <input asp-for="Email" id="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                    <label asp-for="Mobile" class="control-label"></label>
+                    <input asp-for="Mobile" id="Mobile" class="form-control" />
+                <span asp-validation-for="Mobile" class="text-danger"></span>
+            </div>
+      
+
+
+            <div class="form-group">
+                <input type="submit" value="Submit" class="btn btn-primary mt-2" />
+            </div>
+                <button type="submit" id="deleteBtn" name="action" value="delete" class="btn btn-danger"
+                        style="display:none">
+                    Delete
+                </button>
+        </form>
+    </div>
+</div>
+
+</div>
+
+<div>
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
+<script>
+
+    $(document).ready(function () {
+
+
+        alert("ssss");
+        $("#searchBtn").click(function () {
+            var vCode = $("#searchVCode").val().toLowerCase();
+            var vName = $("#searchVName").val().toLowerCase();
+
+            $("#recordsTable tbody tr").filter(function () {
+                var rowText = $(this).text().toLowerCase();
+                var vCodeMatch = vCode === "" || $(this).find("td:eq(0)").text().toLowerCase().includes(vCode);
+                var vNameMatch = vName === "" || $(this).find("td:eq(1)").text().toLowerCase().includes(vName);
+
+                $(this).toggle(vCodeMatch && vNameMatch);
+            });
+        });
+
+        $("#resetBtn").click(function () {
+            $("#searchVCode, #searchVName").val("");
+            $("#recordsTable tbody tr").show();
+        });
+    });
+</script>
+
+
+
+
+
+<script>
+    //---------- Update form when clicking Pno
+    document.querySelectorAll(".pno-cell").forEach(function (cell) {
+        cell.addEventListener("click", function () {
+            var id = this.getAttribute("data-id");
+            var pno = this.getAttribute("data-pno");
+            var name = this.getAttribute("data-name");
+            var email = this.getAttribute("data-email");
+            var mobile = this.getAttribute("data-mobile");
+
+            // Fill form fields
+            document.getElementById("Id").value = id;
+            document.getElementById("Pno").value = pno;
+            document.getElementById("Name").value = name;
+            document.getElementById("Email").value = email;
+            document.getElementById("Mobile").value = mobile;
+
+            // Show form + delete button
+            document.querySelector(".parent").style.display = "block";
+            document.getElementById("deleteBtn").style.display = "inline-block";
+        });
+    });
+
+    //---------- New form (clear fields + hide delete button)
+    document.getElementById("ShowForm").addEventListener("click", function () {
+        document.getElementById("Id").value = "";
+        document.getElementById("Pno").value = "";
+        document.getElementById("Name").value = "";
+        document.getElementById("Email").value = "";
+        document.getElementById("Mobile").value = "";
+
+        document.querySelector(".parent").style.display = "block";
+        document.getElementById("deleteBtn").style.display = "none"; // hide delete
+    });
+
+    //---------- Optional: confirm delete
+  
+
+    //---------- Hide success/error messages after 2 sec
+    setTimeout(function () {
+        var success = document.getElementById("successMsg");
+        if (success) {
+            success.style.display = "none";
+        }
+
+        var error = document.getElementById("errorMsg");
+        if (error) {
+            error.style.display = "none";
+        }
+    }, 2000);
+</script>
