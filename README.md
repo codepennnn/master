@@ -1,23 +1,32 @@
-   public bool IsWorkOrderInExemptionPeriod(string workOrderNo)
-   {
-       string StrSQL = "SELECT COUNT(*) FROM App_WorkOrder_Exemption WHERE WorkOrderNo = @WorkOrderNo AND Status = 'Approved' AND DATEDIFF(DAY, Approved_On, GETDATE()) <= Exemption_CC;";
-       Dictionary<string, object> objParam = new Dictionary<string, object>();
-       DataHelper dh = new DataHelper();
-       return dh.GetDataset(StrSQL, "App_WorkOrder_Exemption", objParam);
-   }
+public bool AreWorkOrdersInExemptionPeriod(string workOrdersCsv)
+{
+    string sql = @"
+        SELECT COUNT(*) 
+        FROM App_WorkOrder_Exemption
+        WHERE Status = 'Approved'
+          AND DATEDIFF(DAY, Approved_On, GETDATE()) <= Exemption_CC
+          AND @WorkOrders LIKE '%' + WorkOrderNo + '%';
+    ";
 
-  //validation - Approved work orders should not be repeated within the exempted period defined by the CC team
+    Dictionary<string, object> parameters = new Dictionary<string, object>
+    {
+        { "@WorkOrders", workOrdersCsv }
+    };
 
-  string[] selectedWorkorders = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
-                                  .Rows[0]["WorkOrderNo"].ToString()
-                                  .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+    DataHelper dh = new DataHelper();
+    object result = dh.ExecuteScalar(sql, parameters);
+    int count = Convert.ToInt32(result);
 
-  foreach (string wo in selectedWorkorders)
-  {
-      if (blobj.IsWorkOrderInExemptionPeriod(wo.Trim()))
-      {
-          MyMsgBox.show(CLMS.Control.MyMsgBox.MessageType.Errors,
-              $"Work Order {wo} is already approved and still within the exemption period. Duplicate not allowed!");
-          return;   
-      }
-  }
+    return count > 0;
+}
+
+
+string selectedWorkordersCsv = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
+                                 .Rows[0]["WorkOrderNo"].ToString();
+
+if (blobj.AreWorkOrdersInExemptionPeriod(selectedWorkordersCsv))
+{
+    MyMsgBox.show(CLMS.Control.MyMsgBox.MessageType.Errors,
+        "One or more work orders are already approved and still within the exemption period. Duplicate not allowed!");
+    return;
+}
