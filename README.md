@@ -23,40 +23,36 @@ protected void btnDwnld_Click(object sender, EventArgs e)
 
             string cellValue = string.Empty;
 
-            // Check for TextBox
-            TextBox tb = row.Cells[colIndex].FindControl("Bonus_Paid_Amount") as TextBox;
-            if (tb == null) tb = row.Cells[colIndex].FindControl("Bonus_UnPaid_Amount") as TextBox;
-            if (tb != null)
+            // Check for controls inside the cell
+            if (row.Cells[colIndex].Controls.Count > 0)
             {
-                cellValue = tb.Text.Trim();
-            }
-            else
-            {
-                // Check for Label
-                Label lbl = row.Cells[colIndex].FindControl("lblID") as Label ??
-                            row.Cells[colIndex].FindControl("lblYear") as Label ??
-                            row.Cells[colIndex].FindControl("lblVcode") as Label ??
-                            row.Cells[colIndex].FindControl("lblAadharNo") as Label ??
-                            row.Cells[colIndex].FindControl("lblWorkManSlno") as Label ??
-                            row.Cells[colIndex].FindControl("lblWorkorderNo") as Label ??
-                            row.Cells[colIndex].FindControl("lblWorkManCategory") as Label ??
-                            row.Cells[colIndex].FindControl("lblWorkManName") as Label ??
-                            row.Cells[colIndex].FindControl("lblTotaldaysWorked") as Label ??
-                            row.Cells[colIndex].FindControl("lblTotalWages") as Label ??
-                            row.Cells[colIndex].FindControl("lblPuja_Bonus") as Label ??
-                            row.Cells[colIndex].FindControl("lblInterim_Bonus") as Label ??
-                            row.Cells[colIndex].FindControl("lblDeduction_misconduct_emp") as Label ??
-                            row.Cells[colIndex].FindControl("lblTotal_deduction") as Label ??
-                            row.Cells[colIndex].FindControl("lblBonusPayableAmount") as Label ??
-                            row.Cells[colIndex].FindControl("lblBankStatementSlno") as Label;
-
-                if (lbl != null)
-                    cellValue = lbl.Text.Trim();
-                else
-                    cellValue = row.Cells[colIndex].Text.Trim(); // fallback
+                foreach (Control ctrl in row.Cells[colIndex].Controls)
+                {
+                    if (ctrl is TextBox tb)
+                    {
+                        cellValue = tb.Text.Trim();
+                        break;
+                    }
+                    else if (ctrl is Label lbl)
+                    {
+                        cellValue = lbl.Text.Trim();
+                        break;
+                    }
+                    else if (ctrl is DropDownList ddl)
+                    {
+                        cellValue = ddl.SelectedItem.Text.Trim();
+                        break;
+                    }
+                }
             }
 
-            // handle &nbsp;
+            // Fallback to cell text
+            if (string.IsNullOrEmpty(cellValue))
+            {
+                cellValue = row.Cells[colIndex].Text.Trim();
+            }
+
+            // Handle &nbsp;
             if (cellValue == "&nbsp;") cellValue = string.Empty;
 
             dr[colIndex] = cellValue;
