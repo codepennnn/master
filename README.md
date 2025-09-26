@@ -2,13 +2,14 @@ protected void btnDwnld_Click(object sender, EventArgs e)
 {
     DataTable dt = new DataTable("BonusData");
 
-    // ----- Headers -----
+    // ----- Build list of visible columns (skip ID) -----
+    List<int> visibleColumnIndexes = new List<int>();
     foreach (DataControlField column in Grid.Columns)
     {
-        // Only add visible columns and skip the ID column
         if (column.Visible && column.HeaderText != "ID")
         {
             dt.Columns.Add(column.HeaderText);
+            visibleColumnIndexes.Add(Grid.Columns.IndexOf(column)); // store actual index
         }
     }
 
@@ -16,13 +17,10 @@ protected void btnDwnld_Click(object sender, EventArgs e)
     foreach (GridViewRow row in Grid.Rows)
     {
         DataRow dr = dt.NewRow();
-        int colIndex = 0;
 
-        foreach (DataControlField column in Grid.Columns)
+        for (int i = 0; i < visibleColumnIndexes.Count; i++)
         {
-            // Skip hidden columns and ID column
-            if (!column.Visible || column.HeaderText == "ID") continue;
-
+            int colIndex = visibleColumnIndexes[i];
             string cellValue = string.Empty;
 
             // Check for controls inside the cell
@@ -54,14 +52,13 @@ protected void btnDwnld_Click(object sender, EventArgs e)
                 cellValue = row.Cells[colIndex].Text.Trim();
             }
 
-            dr[colIndex] = cellValue;
-            colIndex++;
+            dr[i] = cellValue; // assign to DataRow
         }
 
         dt.Rows.Add(dr);
     }
 
-    // ----- Export with ClosedXML -----
+    // ----- Export to Excel -----
     using (XLWorkbook wb = new XLWorkbook())
     {
         wb.Worksheets.Add(dt);
