@@ -26,7 +26,7 @@ protected void btnDwnld_Click(object sender, EventArgs e)
             // Check for controls inside the cell
             if (row.Cells[colIndex].Controls.Count > 0)
             {
-                foreach (Control ctrl in row.Cells[colIndex].Controls)
+                foreach (System.Web.UI.Control ctrl in row.Cells[colIndex].Controls)
                 {
                     if (ctrl is TextBox tb)
                     {
@@ -72,7 +72,7 @@ protected void btnDwnld_Click(object sender, EventArgs e)
             wb.SaveAs(ms);
             Response.Clear();
             Response.Buffer = true;
-            Response.ContentType = 
+            Response.ContentType =
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             Response.AddHeader("Content-Disposition",
                 "attachment; filename=Bonus_From_Grid.xlsx");
