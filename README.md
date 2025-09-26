@@ -1,80 +1,23 @@
-protected void btnDwnld_Click(object sender, EventArgs e)
-{
-    DataTable dt = new DataTable("BonusData");
+   public bool IsWorkOrderInExemptionPeriod(string workOrderNo)
+   {
+       string StrSQL = "SELECT COUNT(*) FROM App_WorkOrder_Exemption WHERE WorkOrderNo = @WorkOrderNo AND Status = 'Approved' AND DATEDIFF(DAY, Approved_On, GETDATE()) <= Exemption_CC;";
+       Dictionary<string, object> objParam = new Dictionary<string, object>();
+       DataHelper dh = new DataHelper();
+       return dh.GetDataset(StrSQL, "App_WorkOrder_Exemption", objParam);
+   }
 
-    // ----- Build list of visible columns (skip ID) -----
-    List<int> visibleColumnIndexes = new List<int>();
-    foreach (DataControlField column in Grid.Columns)
-    {
-        if (column.Visible && column.HeaderText != "ID")
-        {
-            dt.Columns.Add(column.HeaderText);
-            visibleColumnIndexes.Add(Grid.Columns.IndexOf(column)); // store actual index
-        }
-    }
+  //validation - Approved work orders should not be repeated within the exempted period defined by the CC team
 
-    // ----- Rows -----
-    foreach (GridViewRow row in Grid.Rows)
-    {
-        DataRow dr = dt.NewRow();
+  string[] selectedWorkorders = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
+                                  .Rows[0]["WorkOrderNo"].ToString()
+                                  .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-        for (int i = 0; i < visibleColumnIndexes.Count; i++)
-        {
-            int colIndex = visibleColumnIndexes[i];
-            string cellValue = string.Empty;
-
-            // Check for controls inside the cell
-            if (row.Cells[colIndex].Controls.Count > 0)
-            {
-                foreach (System.Web.UI.Control ctrl in row.Cells[colIndex].Controls)
-                {
-                    if (ctrl is TextBox tb)
-                    {
-                        cellValue = tb.Text.Trim();
-                        break;
-                    }
-                    else if (ctrl is Label lbl)
-                    {
-                        cellValue = lbl.Text.Trim();
-                        break;
-                    }
-                    else if (ctrl is DropDownList ddl)
-                    {
-                        cellValue = ddl.SelectedItem.Text.Trim();
-                        break;
-                    }
-                }
-            }
-
-            // Fallback to cell text
-            if (string.IsNullOrEmpty(cellValue) || cellValue == "&nbsp;")
-            {
-                cellValue = row.Cells[colIndex].Text.Trim();
-            }
-
-            dr[i] = cellValue; // assign to DataRow
-        }
-
-        dt.Rows.Add(dr);
-    }
-
-    // ----- Export to Excel -----
-    using (XLWorkbook wb = new XLWorkbook())
-    {
-        wb.Worksheets.Add(dt);
-
-        using (MemoryStream ms = new MemoryStream())
-        {
-            wb.SaveAs(ms);
-            Response.Clear();
-            Response.Buffer = true;
-            Response.ContentType =
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            Response.AddHeader("Content-Disposition",
-                "attachment; filename=Bonus_From_Grid.xlsx");
-            Response.BinaryWrite(ms.ToArray());
-            Response.Flush();
-            Response.End();
-        }
-    }
-}
+  foreach (string wo in selectedWorkorders)
+  {
+      if (blobj.IsWorkOrderInExemptionPeriod(wo.Trim()))
+      {
+          MyMsgBox.show(CLMS.Control.MyMsgBox.MessageType.Errors,
+              $"Work Order {wo} is already approved and still within the exemption period. Duplicate not allowed!");
+          return;   
+      }
+  }
