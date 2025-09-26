@@ -1,6 +1,85 @@
-<asp:TemplateField HeaderText="Sl.No." SortExpression="Sl_No"
-    HeaderStyle-Width="50px" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center">
-    <ItemTemplate>
-        <asp:Label ID="lblSlNo" runat="server" Text='<%# Container.DataItemIndex + 1 %>'></asp:Label>
-    </ItemTemplate>
-</asp:TemplateField>
+        protected void btnDwnld_Click(object sender, EventArgs e)
+        {
+            DataTable dt = new DataTable("BonusData");
+
+  
+            foreach (DataControlField column in Grid.Columns)
+            {
+                if (column.Visible)
+                {
+                    dt.Columns.Add(column.HeaderText);
+                }
+            }
+
+         
+            foreach (GridViewRow row in Grid.Rows)
+            {
+                DataRow dr = dt.NewRow();
+                int colIndex = 0;
+
+                foreach (DataControlField column in Grid.Columns)
+                {
+                    if (!column.Visible) continue;
+
+                    string cellValue = string.Empty;
+
+                
+                    if (row.Cells[colIndex].Controls.Count > 0)
+                    {
+                        foreach (System.Web.UI.Control ctrl in row.Cells[colIndex].Controls)
+                        {
+                            if (ctrl is TextBox tb)
+                            {
+                                cellValue = tb.Text.Trim();
+                                break;
+                            }
+                            else if (ctrl is Label lbl)
+                            {
+                                cellValue = lbl.Text.Trim();
+                                break;
+                            }
+                            else if (ctrl is DropDownList ddl)
+                            {
+                                cellValue = ddl.SelectedItem.Text.Trim();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(cellValue))
+                    {
+                        cellValue = row.Cells[colIndex].Text.Trim();
+                    }
+
+               
+                    if (cellValue == "&nbsp;") cellValue = string.Empty;
+
+                    dr[colIndex] = cellValue;
+                    colIndex++;
+                }
+
+                dt.Rows.Add(dr);
+            }
+
+          
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                wb.Worksheets.Add(dt);
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    wb.SaveAs(ms);
+                    Response.Clear();
+                    Response.Buffer = true;
+                    Response.ContentType =
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                    Response.AddHeader("Content-Disposition",
+                        "attachment; filename=Bonus_From_Grid.xlsx");
+                    Response.BinaryWrite(ms.ToArray());
+                    Response.Flush();
+                    Response.End();
+                }
+            }
+        }
+
+working great but ID also showing in excel please remove it from excelsheet
