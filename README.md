@@ -1,33 +1,40 @@
-public bool AreWorkOrdersInExemptionPeriod(string workOrdersCsv)
+public List<string> GetWorkOrdersInExemptionPeriod(string workOrdersCsv)
 {
     string sql = @"
-        SELECT COUNT(*) 
-        FROM App_WorkOrder_Exemption
-        WHERE Status = 'Approved'
-          AND DATEDIFF(DAY, Approved_On, GETDATE()) <= Exemption_CC
-          AND @WorkOrders LIKE '%' + WorkOrderNo + '%';
+        SELECT w.WorkOrderNo
+        FROM App_WorkOrder_Exemption AS w
+        INNER JOIN STRING_SPLIT(@WorkOrders, ',') AS s
+                ON LTRIM(RTRIM(s.value)) = w.WorkOrderNo
+        WHERE w.Status = 'Approved'
+          AND DATEDIFF(DAY, w.Approved_On, GETDATE()) <= w.Exemption_CC;
     ";
 
-    Dictionary<string, object> parameters = new Dictionary<string, object>
+    var parameters = new Dictionary<string, object>
     {
         { "@WorkOrders", workOrdersCsv }
     };
 
     DataHelper dh = new DataHelper();
-    object result = dh.ExecuteScalar(sql, parameters);
-    int count = Convert.ToInt32(result);
+    DataSet ds = dh.GetDataset(sql, "App_WorkOrder_Exemption", parameters);
 
-    return count > 0;
+    return ds.Tables[0]
+             .AsEnumerable()
+             .Select(r => r.Field<string>("WorkOrderNo"))
+             .ToList();
 }
 
 
 
-string selectedWorkordersCsv = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
-                                 .Rows[0]["WorkOrderNo"].ToString();
+string csv = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
+                              .Rows[0]["WorkOrderNo"]
+                              .ToString();
 
-if (blobj.AreWorkOrdersInExemptionPeriod(selectedWorkordersCsv))
+List<string> conflicts = blobj.GetWorkOrdersInExemptionPeriod(csv);
+
+if (conflicts.Any())
 {
+    string joined = string.Join(", ", conflicts);
     MyMsgBox.show(CLMS.Control.MyMsgBox.MessageType.Errors,
-        "One or more work orders are already approved and still within the exemption period. Duplicate not allowed!");
+        $"The following work order(s) are already approved and still within the exemption period: {joined}. Duplicate not allowed!");
     return;
 }
