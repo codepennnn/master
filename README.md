@@ -1,52 +1,24 @@
-public List<string> GetWorkOrdersInExemptionPeriod(string workOrder)
-{
-    // Use your requested LIKE-pattern logic
-    string sql = @"
-        SELECT w.WorkOrderNo
-        FROM App_WorkOrder_Exemption AS w
-        WHERE w.Status = 'Approved'
-          AND DATEDIFF(DAY, w.Approved_On, GETDATE()) <= w.Exemption_CC
-          AND (
-                w.WorkOrderNo = @WorkOrder
-             OR w.WorkOrderNo LIKE @WorkOrder + ',%'
-             OR w.WorkOrderNo LIKE '%,' + @WorkOrder + ',%'
-             OR w.WorkOrderNo LIKE '%,' + @WorkOrder
-          );
-    ";
+  protected void btnNew_Click(object sender, EventArgs e)
+  {
+      //ScriptManager.RegisterStartupScript(Page, Page.GetType(), "myModal", "getClickedElement();", true);
 
-    // Parameter dictionary — match name exactly
-    Dictionary<string, object> objParam = new Dictionary<string, object>
-    {
-        { "@WorkOrder", workOrder }
-    };
+      PageRecordDataSet.Clear();
+      WorkOrder_Exemption_Records.SelectedIndex = -1;
+      PageRecordDataSet.EnforceConstraints = false;
+      WorkOrder_Exemption_Record.NewRecord();
+      WorkOrder_Exemption_Record.BindData();
+      DivInputFields.Visible = true;
+      btnSave.Visible = true;
+      }
 
-    DataHelper dh = new DataHelper();
-    DataSet ds = dh.GetDataset(sql, "App_WorkOrder_Exemption", objParam);
-
-    // Convert the first table’s rows to a list of strings
-    return ds.Tables[0]
-             .AsEnumerable()
-             .Select(r => r.Field<string>("WorkOrderNo"))
-             .ToList();
-}
+         protected void WorkOrder_Exemption_Records_SelectedIndexChanged(object sender, EventArgs e)
+   {
+       GetRecord(WorkOrder_Exemption_Records.SelectedDataKey.Value.ToString());
+       WorkOrder_Exemption_Records.SelectedIndex = -1;
+       WorkOrder_Exemption_Record.BindData();
+       DivInputFields.Visible = true;
+       btnSave.Visible = true;
+       
 
 
-
-
-string[] workOrders = PageRecordDataSet.Tables["App_WorkOrder_Exemption"]
-                                       .Rows[0]["WorkOrderNo"]
-                                       .ToString()
-                                       .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-foreach (string wo in workOrders)
-{
-    List<string> conflicts = blobj.GetWorkOrdersInExemptionPeriod(wo.Trim());
-
-    if (conflicts.Any())
-    {
-        string joined = string.Join(", ", conflicts);
-        MyMsgBox.show(CLMS.Control.MyMsgBox.MessageType.Errors,
-            $"The following work order(s) are already approved and still within the exemption period: {joined}. Duplicate not allowed!");
-        return;
-    }
-}
+   }
